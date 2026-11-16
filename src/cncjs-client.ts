@@ -396,13 +396,35 @@ export class CNCjsClient {
 
   async listPorts(): Promise<SerialPort[]> {
     this.ensureConnected();
+    // CNCjs answers the "list" request with a "serialport:list" event,
+    // not a socket.io ack callback.
     return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error("List ports timeout")), 5000);
-      this.socket!.emit("list", (ports: SerialPort[]) => {
+      const timeout = setTimeout(() => {
+        this.socket!.removeListener("serialport:list", onList);
+        reject(new Error("List ports timeout"));
+      }, 5000);
+      const onList = (ports: SerialPort[]) => {
         clearTimeout(timeout);
         resolve(ports || []);
-      });
+      };
+      this.socket!.once("serialport:list", onList);
+      this.socket!.emit("list");
     });
+  }
+
+  // Attach to a serial port that is already open in CNCjs (e.g. opened by
+  // the web UI). Emitting "open" for an in-use port only adds this socket
+  // to the existing connection — CNCjs does not reopen the port — so this
+  // is safe in monitoring mode. Returns the port path, or null if no port
+  // is currently in use.
+  async attachToActivePort(): Promise<string | null> {
+    this.ensureConnected();
+    if (this._connectedPort) return this._connectedPort;
+    const ports = await this.listPorts();
+    const active = ports.find((p) => p.inuse);
+    if (!active) return null;
+    await this.openPort(active.port, 115200, "Grbl");
+    return active.port;
   }
 
   async openPort(

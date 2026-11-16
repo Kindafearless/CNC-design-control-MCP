@@ -1,6 +1,7 @@
 declare module "socket.io-client" {
   interface Socket {
     on(event: string, callback: (...args: any[]) => void): Socket;
+    once(event: string, callback: (...args: any[]) => void): Socket;
     emit(event: string, ...args: any[]): Socket;
     disconnect(): Socket;
     removeListener(event: string, callback: (...args: any[]) => void): Socket;

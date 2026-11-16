@@ -12,7 +12,10 @@ function err(s: string) {
   return { content: [{ type: "text" as const, text: s }], isError: true };
 }
 
-export function registerSafetyTools(server: McpServer): void {
+export function registerSafetyTools(
+  server: McpServer,
+  opts: { enableControl?: boolean } = {}
+): void {
   // emergency_stop — ALWAYS available if port is open
   server.tool(
     "emergency_stop",
@@ -51,7 +54,12 @@ export function registerSafetyTools(server: McpServer): void {
     }
   );
 
-  // jog_cancel — cancel in-progress jog without alarm
+  // jog_cancel — cancel in-progress jog without alarm.
+  // Stop-only like feed_hold, but jogging is impossible in monitoring mode,
+  // so it is only registered alongside the control tools.
+  if (!opts.enableControl) {
+    return;
+  }
   server.tool(
     "jog_cancel",
     "Cancel an in-progress jog. Stops motion with controlled deceleration without triggering alarm state.",
