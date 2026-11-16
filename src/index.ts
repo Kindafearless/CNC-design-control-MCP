@@ -17,6 +17,7 @@ import { registerFreeCADTools } from "./tools/freecad.js";
 import { registerIllustratorTools } from "./tools/illustrator.js";
 import { registerMarketplaceTools } from "./tools/marketplace.js";
 import { registerCarpentryTools } from "./tools/carpentry.js";
+import { registerLightTools } from "./tools/light.js";
 
 const server = new McpServer({
   name: "cncjs-mcp",
@@ -33,6 +34,7 @@ const ENABLE_CONTROL = process.env.CNC_ENABLE_CONTROL === "1";
 registerQueryTools(server);
 registerSafetyTools(server, { enableControl: ENABLE_CONTROL });
 registerAnalysisTools(server);
+registerLightTools(server); // shop light only — never touches the CNC
 
 if (ENABLE_CONTROL) {
   registerConnectionTools(server);
